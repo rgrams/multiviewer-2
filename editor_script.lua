@@ -37,6 +37,7 @@ local function addImage(imgData, name, x, y, sx, sy)
 	i.ox, i.oy = w/2, h/2
 	i.lt, i.rt, i.top, i.bot = x - w/2, x + w/2, y - h/2, y + h/2
 	table.insert(images, i)
+	shouldUpdate = true
 end
 
 function script.draw(self)
