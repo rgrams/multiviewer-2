@@ -93,7 +93,7 @@ function script.update(self, dt)
 
 	if not self.drag then
 		updateHoverList(self)
-		self.hover = self.hoverList[1]
+		self.hover = self.hoverList[#self.hoverList]
 	elseif self.drag then -- Drag.
 		local img = self.hover
 		if img then
