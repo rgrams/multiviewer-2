@@ -25,6 +25,9 @@ function love.load()
 
 	love.graphics.setBackgroundColor(clearColor)
 
+	local font = love.graphics.newFont("font/source/OpenSans-Semibold.ttf", 15)
+	love.graphics.setFont(font)
+
 	scene = SceneTree(drawLayers, defaultLayer)
 
 	-- Add world tree in one chunk so inits are called in bottom-up order.
