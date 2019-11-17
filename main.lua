@@ -15,7 +15,6 @@ local defaultLayer = "images"
 
 local clearColor = { 0.2, 0.2, 0.2 }
 
-local guiCam
 local root
 local editor_script = require "editor_script"
 
