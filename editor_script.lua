@@ -216,7 +216,9 @@ function script.input(self, name, value, change)
 		end
 	elseif name == "delete" and change == 1 then
 		if self.hoverImg then
-			scene:remove(self.hoverImg)
+			for i,v in ipairs(images) do
+				if v == self.hoverImg then  table.remove(images, i)  end
+			end
 			self.hoverImg = nil
 		end
 	elseif name == "quit" and change == 1 then
