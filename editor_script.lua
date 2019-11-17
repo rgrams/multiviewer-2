@@ -105,13 +105,17 @@ function love.filedropped(file)
 	local path = file:getFilename()
 	print("FILE DROPPED: " .. tostring(file:getFilename()))
 	local img = safeLoadNewImage(file)
-	if img then  addImage(img, path)  end
+	if img then
+		local x, y = Camera.current.pos.x, Camera.current.pos.y
+		addImage(img, path, x, y)
+	end
 end
 
 function love.directorydropped(path)
 	print("DIRECTORY DROPPED: " .. tostring(path))
 	love.filesystem.mount(path, "newImages")
 	local files = love.filesystem.getDirectoryItems("newImages")
+	local x, y = Camera.current.pos.x, Camera.current.pos.y
 	for k,subPath in pairs(files) do
 		subPath = "newImages/" .. subPath
 		local info = love.filesystem.getInfo(subPath)
@@ -119,7 +123,7 @@ function love.directorydropped(path)
 			print("ERROR: Can't get file info for path: \n  " .. subPath)
 		elseif info.type == "file" then
 			local img = safeLoadNewImage(subPath)
-			if img then  addImage(img, subPath)  end
+			if img then  addImage(img, subPath, x, y)  end
 		end
 	end
 end
