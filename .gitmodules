@@ -1,0 +1,4 @@
+[submodule "philtre"]
+	path = philtre
+	url = https://github.com/JoshuaGrams/philtre2d.git
+	branch = master
