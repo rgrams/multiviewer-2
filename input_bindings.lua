@@ -16,7 +16,7 @@ local bindings = {
 	{ "delete", "button", "scancode", "delete" },
 	{ "reparent", "button", "scancode", "r" },
 
-	{ "left click", "button", "mouse", 1 },
+	{ "click", "button", "mouse", 1 },
 	{ "scale", "button", "mouse", 2 },
 	{ "snap", "button", "scancode", "lshift" },
 	{ "zoom", "axis", "mouse", "wheel y" },

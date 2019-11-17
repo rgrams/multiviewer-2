@@ -44,8 +44,8 @@ function script.draw(self)
 	for i,v in ipairs(images) do
 		love.graphics.draw(v.img, v.x, v.y, 0, v.sx, v.sy, v.ox, v.oy)
 	end
-	if self.hover then
-		local img = self.hover
+	if self.hoverImg then
+		local img = self.hoverImg
 		love.graphics.setColor(1, 1, 0, 1)
 		love.graphics.rectangle("line", img.lt, img.top, img.w*img.sx, img.h*img.sy)
 	end
@@ -91,14 +91,13 @@ function script.update(self, dt)
 	self.msx, self.msy = love.mouse.getPosition()
 	self.mwx, self.mwy = Camera.current:screenToWorld(self.msx, self.msy)
 
-	if not self.drag then
+	if not self.dragging then
 		updateHoverList(self)
-		self.hover = self.hoverList[#self.hoverList]
-	elseif self.drag then -- Drag.
-		local img = self.hover
+		self.hoverImg = self.hoverList[#self.hoverList]
+	elseif self.dragging then -- Drag.
+		local img = self.hoverImg
 		if img then
-			local dx, dy = self.mwx - self.lastmwx, self.mwy - self.lastmwy
-			img.x, img.y = img.x + dx, img.y + dy
+			img.x, img.y = self.mwx + self.dragx, self.mwy + self.dragy
 			updateImageRect(img)
 		end
 	end
@@ -130,16 +129,12 @@ end
 
 function script.input(self, name, value, change)
 	shouldUpdate = true
-	if name == "delete" and change == 1 then
-		if self.hover then
-			scene:remove(self.hover)
-			self.hover = nil
-		end
-	elseif name == "left click" then
-		if change == 1 then
-			self.drag = true
+	if name == "click" then
+		if change == 1 and self.hoverImg then
+			self.dragging = true
+			self.dragx, self.dragy = self.hoverImg.x - self.mwx, self.hoverImg.y - self.mwy
 		elseif change == -1 then
-			self.drag = nil
+			self.dragging = nil
 			self.dropTarget = nil
 		end
 	elseif name == "zoom" then
@@ -149,6 +144,11 @@ function script.input(self, name, value, change)
 			self.panning = { x = Camera.current.pos.x, y = Camera.current.pos.y }
 		else
 			self.panning = nil
+		end
+	elseif name == "delete" and change == 1 then
+		if self.hoverImg then
+			scene:remove(self.hoverImg)
+			self.hoverImg = nil
 		end
 	elseif name == "quit" and change == 1 then
 		love.event.quit(0)
