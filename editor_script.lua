@@ -372,6 +372,12 @@ function script.input(self, name, value, change)
 				addImage(self, image, path, self.mwx, self.mwy)
 			end
 		end
+	elseif name == "confirm" and change == 1 then
+		if Input.get("alt").value == 1 then -- Toggle borderless.
+			local w, h, flags = love.window.getMode()
+			love.window.updateMode(w, h, {borderless = not flags.borderless})
+			shouldUpdate = true
+		end
 	elseif name == "quit" and change == 1 then
 		love.event.quit(0)
 	end
