@@ -375,7 +375,8 @@ function script.input(self, name, value, change)
 	elseif name == "confirm" and change == 1 then
 		if Input.get("alt").value == 1 then -- Toggle borderless.
 			local w, h, flags = love.window.getMode()
-			love.window.updateMode(w, h, {borderless = not flags.borderless})
+			flags.borderless = not flags.borderless
+			love.window.setMode(w, h, flags)
 			shouldUpdate = true
 		end
 	elseif name == "quit" and change == 1 then
