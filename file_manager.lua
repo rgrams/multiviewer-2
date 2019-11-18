@@ -32,9 +32,11 @@ end
 function M.decode_project_file(path)
 	local f = io.open(path, "r")
 	local str = f:read("*a")
-	local data = json.parse(str)
-	-- pprint(images)
-	return data
+	if #str > 0 then
+		return json.parse(str)
+	else
+		return {}
+	end
 end
 
 return M

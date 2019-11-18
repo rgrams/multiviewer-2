@@ -155,7 +155,7 @@ local function openProjectFile(self, absPath)
 	end
 
 	-- Append images from opened project to the current workspace.
-	local images = data[1] and data or data.images
+	local images = (data[1] and data or data.images) or {}
 	for i,img in ipairs(images) do
 		-- Save Format = { path, z, pos = { x, y }, size = { x, y } }
 		local image = getImageFromAbsolutePath(img.path)
