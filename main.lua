@@ -4,9 +4,6 @@ require "philtre.init"  -- Load all engine components into global variables.
 require "philtre.lib.math-patch"
 vector = require "philtre.lib.vec2xy"
 
-physics.setCategoryNames(
-	"default", "images"
-)
 local drawLayers = {
 	gui = { "gui" },
 	world = { "images" },
