@@ -3,9 +3,8 @@ local fileman = require "file_manager"
 
 local script = {}
 
+local baseTitle = "Multiviewer 2.0 - "
 local zoomRate = 0.1
-
-local projectFilePath
 
 function script.init(self)
 	Input.enable(self)
@@ -14,6 +13,8 @@ function script.init(self)
 	self.lastmwx, self.lastmwy = 0, 0
 	self.lastmsx, self.lastmsy = 0, 0
 	self.images = {}
+	self.projectFilePath = nil
+	self.projectIsDirty = false
 end
 
 function script.draw(self)
@@ -75,13 +76,29 @@ function script.draw(self)
 	end
 end
 
+local function setDirty(self, dirty)
+	if not self.projectFilePath then  return  end
+	if dirty and not self.projectIsDirty then
+		self.projectIsDirty = true
+		local title = love.window.getTitle()
+		title = title .. "*"
+		love.window.setTitle(title)
+	elseif not dirty and self.projectIsDirty then
+		self.projectIsDirty = false
+		local title = love.window.getTitle()
+		title = string.sub(title, 1, -2)
+		love.window.setTitle(title)
+	end
+end
+
 local function updateImageRect(img)
 	local w, h = img.w * img.scale, img.h * img.scale
 	img.lt, img.rt = img.x - w/2, img.x + w/2
 	img.top, img.bot = img.y - h/2, img.y + h/2
 end
 
-local function addImage(self, imgData, name, x, y, scale)
+local function addImage(self, imgData, name, x, y, scale, dontDirty)
+	if not dontDirty then  setDirty(self, true)  end
 	x = x or 0;  y = y or 0;  scale = scale or 1
 	local i = {
 		img = imgData, name = name,
@@ -119,9 +136,16 @@ local function openProjectFile(self, absPath)
 	if not data then  return  end
 	print("Open Project File --> ", data)
 
-	if not projectFilePath then -- Use opened project as the current one.
-		projectFilePath = absPath
-		love.window.setTitle("Multiviewer 2.0 - " .. projectFilePath)
+	if not self.projectFilePath then -- Use opened project as the current one.
+		self.projectIsDirty = false
+		self.projectFilePath = absPath
+		if #self.images ~= 0 then  self.projectIsDirty = true  end
+
+		local filename = fileman.get_filename_from_path(absPath)
+		local title = baseTitle .. filename .. ".multiview "
+		if self.projectIsDirty then  title = title .. "*"  end
+		love.window.setTitle(title)
+
 		if data.camera then -- Set camera pos and zoom from loaded data.
 			local cd = data.camera
 			local cam = Camera.current
@@ -137,7 +161,7 @@ local function openProjectFile(self, absPath)
 		local image = getImageFromAbsolutePath(img.path)
 		local w, h = image:getDimensions()
 		local scale = img.size.x / w
-		addImage(self, image, img.path, img.pos.x, -img.pos.y, scale)
+		addImage(self, image, img.path, img.pos.x, -img.pos.y, scale, true)
 	end
 
 	return data
@@ -196,7 +220,9 @@ function script.update(self, dt)
 	if self.dragging then
 		local img = self.hoverImg
 		if img then
-			img.x, img.y = self.mwx + self.dragx, self.mwy + self.dragy
+			local x, y = self.mwx + self.dragx, self.mwy + self.dragy
+			if x ~= img.x or y ~= img.y then  setDirty(self, true)  end
+			img.x, img.y = x, y
 			updateImageRect(img)
 		end
 	elseif self.scaling then
@@ -205,6 +231,7 @@ function script.update(self, dt)
 			local ox, oy = img.x - self.mwx, img.y - self.mwy
 			local newDist = vector.len(ox, oy)
 			local scale = newDist / self.dragStartDist
+			if scale ~= 1 then  setDirty(self, true)  end
 			img.scale = self.dragStartScale * scale
 			self.dragScale = scale
 			updateImageRect(img)
@@ -216,6 +243,7 @@ function script.update(self, dt)
 
 	if self.panning then
 		local dx, dy = self.msx - self.lastmsx, self.msy - self.lastmsy
+		if dx ~= 0 or dy ~= 0 then  setDirty(self, true)  end
 		dx, dy = Camera.current:screenToWorld(dx, dy, true)
 		local camPos = Camera.current.pos
 		camPos.x, camPos.y = camPos.x - dx, camPos.y - dy
@@ -259,6 +287,7 @@ function script.input(self, name, value, change)
 			self.scaling = false
 		end
 	elseif name == "zoom" then
+		setDirty(self, true)
 		Camera.current:zoomIn(value * zoomRate)
 	elseif name == "pan" then
 		if value == 1 then
@@ -267,6 +296,7 @@ function script.input(self, name, value, change)
 			self.panning = nil
 		end
 	elseif name == "delete" and change == 1 then
+		setDirty(self, true)
 		if self.hoverImg then
 			for i,v in ipairs(self.images) do
 				if v == self.hoverImg then  table.remove(self.images, i)  end

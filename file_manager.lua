@@ -15,6 +15,10 @@ function M.get_file_extension(path)
 	end
 end
 
+function M.get_filename_from_path(path)
+	return string.match(path, ".*[\\/%.]([^.]*)%.multiview$")
+end
+
 function M.ensure_file_extension(path)
 	local dotPos = string.find(path, "%.[^%.]+$")
 	if dotPos and string.sub(path, dotPos+1) == M.fileExt then
