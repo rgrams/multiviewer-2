@@ -55,10 +55,6 @@ function love.draw()
 	Camera.current:resetTransform()
 
 	scene:draw("gui")
-
-	love.graphics.setColor(1, 1, 1, 1)
-   local avgDt = love.timer.getAverageDelta() * 1000
-   love.graphics.print(string.format("%.4f", avgDt))
 end
 
 function love.filedropped(file)
