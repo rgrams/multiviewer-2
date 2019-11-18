@@ -121,6 +121,7 @@ local function openProjectFile(self, absPath)
 
 	if not projectFilePath then -- Use opened project as the current one.
 		projectFilePath = absPath
+		love.window.setTitle("Multiviewer 2.0 - " .. projectFilePath)
 		if data.camera then -- Set camera pos and zoom from loaded data.
 			local cd = data.camera
 			local cam = Camera.current

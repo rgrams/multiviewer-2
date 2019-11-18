@@ -22,6 +22,8 @@ function love.load(arg)
 	Input.init()
 	Input.bind(require("input_bindings"))
 
+	love.window.setTitle("Multiviewer 2.0 - No project")
+
 	love.graphics.setBackgroundColor(clearColor)
 
 	local font = love.graphics.newFont("font/source/OpenSans-Semibold.ttf", 15)
