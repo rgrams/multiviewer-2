@@ -35,7 +35,7 @@ function love.load(arg)
 	root = mod(
 		Object(), { name = "root", debugDraw = false, children = {
 			mod(World(0, 1800, false), { script = {editor_script} }),
-			Camera()
+			Camera(0, 0, 0, nil, "expand view")
 		}}
 	)
 	scene:add(root)

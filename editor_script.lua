@@ -125,7 +125,7 @@ local function openProjectFile(self, absPath)
 		if data.camera then -- Set camera pos and zoom from loaded data.
 			local cd = data.camera
 			local cam = Camera.current
-			cam.pos.x, cam.pos.y = cd.pos.x, cd.pos.y
+			cam.pos.x, cam.pos.y = cd.pos.x, -cd.pos.y
 			cam.zoom = 1/cd.zoom
 		end
 	end
