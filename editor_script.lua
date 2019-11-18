@@ -157,7 +157,7 @@ local function safeLoadNewImage(file)
 	end
 end
 
-local function openProjectFile(self, absPath)
+function script.openProjectFile(self, absPath)
 	local data = fileman.decode_project_file(absPath)
 	if not data then  return  end
 	print("Open Project File --> ", data)
@@ -204,7 +204,7 @@ function script.fileDropped(self, file)
 		local x, y = self.mwx, self.mwy
 		addImage(self, img, absPath, x, y)
 	elseif fileman.get_file_extension(absPath) == fileman.fileExt then
-		local data = openProjectFile(self, absPath)
+		local data = script.openProjectFile(self, absPath)
 
 	end
 end

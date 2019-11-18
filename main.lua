@@ -42,6 +42,10 @@ function love.load(arg)
 
 	world = scene:get("/root/World")
 	scene:update(0.01)
+
+	if arg[1] then
+		world:call("openProjectFile", arg[1])
+	end
 end
 
 function love.update(dt)
