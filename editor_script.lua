@@ -152,7 +152,6 @@ end
 local function safeLoadNewImage(file)
 	local success, img = pcall(love.graphics.newImage, file)
 	if success then
-		print(file, img)
 		return img
 	end
 end
@@ -160,7 +159,6 @@ end
 function script.openProjectFile(self, absPath)
 	local data = fileman.decode_project_file(absPath)
 	if not data then  return  end
-	print("Open Project File --> ", data)
 
 	if not self.projectFilePath then -- Use opened project as the current one.
 		self.projectIsDirty = false
@@ -198,7 +196,6 @@ end
 -- Gets a Love File object with an absolute path filename.
 function script.fileDropped(self, file)
 	local absPath = file:getFilename()
-	print("FILE DROPPED: " .. tostring(absPath))
 	local img = safeLoadNewImage(file)
 	if img then
 		local x, y = self.mwx, self.mwy
@@ -212,7 +209,6 @@ end
 -- Gets the absolute path to a directory, which is allowed to be mounted with love.filesystem.
 --   From that you can get the local and absolute paths of files in the directory.
 function script.directoryDropped(self, absDirPath)
-	print("DIRECTORY DROPPED: " .. tostring(absDirPath))
 	love.filesystem.mount(absDirPath, "newImages")
 	local files = love.filesystem.getDirectoryItems("newImages")
 	local x, y = self.mwx, self.mwy
@@ -254,14 +250,11 @@ end
 local function saveProject(self)
 	if self.projectFilePath then
 		if self.projectIsDirty then
-			print("SAVING...")
 			local data = makeProjectData(self)
 			fileman.encode_project_file(data, self.projectFilePath)
-		else
-			print("Project isn't dirty, no need to save.")
 		end
 	else
-		print("No project file path, can't save project.")
+		print("WARNING: Save Project - No project file path, can't save.")
 	end
 end
 
