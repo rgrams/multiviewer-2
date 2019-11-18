@@ -200,6 +200,43 @@ function script.directoryDropped(self, absDirPath)
 	end
 end
 
+local function makeProjectData(self)
+	local data = { camera = {}, images = {} }
+
+	-- Set camera data.
+	local cd, cam = data.camera, Camera.current
+	cd.zoom = 1/cam.zoom
+	cd.pos = { x = cam.pos.x, y = -cam.pos.y }
+
+	-- Set image data.
+	local id = data.images
+	for i,img in ipairs(self.images) do
+		-- Save Format = { path, z, pos = { x, y }, size = { x, y } }
+		local iw, ih = img.img:getDimensions()
+		local w, h = iw * img.scale, ih * img.scale
+		id[i] = {
+			path = img.name, z = i,
+			pos = { x = img.x, y = -img.y }, size = { x = w, y = h }
+		}
+	end
+
+	return data
+end
+
+local function saveProject(self)
+	if self.projectFilePath then
+		if self.projectIsDirty then
+			print("SAVING...")
+			local data = makeProjectData(self)
+			fileman.encode_project_file(data, self.projectFilePath)
+		else
+			print("Project isn't dirty, no need to save.")
+		end
+	else
+		print("No project file path, can't save project.")
+	end
+end
+
 local function posOverlapsImage(img, x, y)
 	return x < img.rt and x > img.lt and y < img.bot and y > img.top
 end
@@ -253,20 +290,6 @@ function script.update(self, dt)
 	self.lastmwx, self.lastmwy = self.mwx, self.mwy
 end
 
-local function saveFile(fileName, text)
-	print("saving file: " .. fileName)
-	local file, err = io.open(fileName, "w")
-	if not file then
-		print(err)
-		return
-	else
-		file:write(text)
-		file:close()
-		print("success", file)
-		return true
-	end
-end
-
 function script.input(self, name, value, change)
 	shouldUpdate = true
 	if name == "click" then
@@ -302,6 +325,11 @@ function script.input(self, name, value, change)
 				if v == self.hoverImg then  table.remove(self.images, i)  end
 			end
 			self.hoverImg = nil
+		end
+	elseif name == "save" and change == 1 then
+		if Input.get("ctrl").value == 1 then
+			saveProject(self)
+			setDirty(self, false)
 		end
 	elseif name == "quit" and change == 1 then
 		love.event.quit(0)
