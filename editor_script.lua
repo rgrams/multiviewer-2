@@ -18,6 +18,7 @@ function script.init(self)
 end
 
 function script.draw(self)
+	love.graphics.setColor(1, 1, 1, 1)
 	for i,v in ipairs(self.images) do
 		love.graphics.draw(v.img, v.x, v.y, 0, v.scale, v.scale, v.ox, v.oy)
 	end
