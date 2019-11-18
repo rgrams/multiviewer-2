@@ -201,7 +201,7 @@ function script.fileDropped(self, file)
 	print("FILE DROPPED: " .. tostring(absPath))
 	local img = safeLoadNewImage(file)
 	if img then
-		local x, y = Camera.current.pos.x, Camera.current.pos.y
+		local x, y = self.mwx, self.mwy
 		addImage(self, img, absPath, x, y)
 	elseif fileman.get_file_extension(absPath) == fileman.fileExt then
 		local data = openProjectFile(self, absPath)
@@ -215,7 +215,7 @@ function script.directoryDropped(self, absDirPath)
 	print("DIRECTORY DROPPED: " .. tostring(absDirPath))
 	love.filesystem.mount(absDirPath, "newImages")
 	local files = love.filesystem.getDirectoryItems("newImages")
-	local x, y = Camera.current.pos.x, Camera.current.pos.y
+	local x, y = self.mwx, self.mwy
 	for k,path in pairs(files) do
 		local mountedPath = "newImages/" .. path
 		local info = love.filesystem.getInfo(mountedPath)
