@@ -1,9 +1,11 @@
 
+local fileman = require "file_manager"
+
 local script = {}
 
 local zoomRate = 0.1
 
-local images = {}
+local projectFilePath
 
 function script.init(self)
 	Input.enable(self)
@@ -11,39 +13,11 @@ function script.init(self)
 	self.mwx, self.mwy = 0, 0
 	self.lastmwx, self.lastmwy = 0, 0
 	self.lastmsx, self.lastmsy = 0, 0
-end
-
-local function safeLoadNewImage(file)
-	local success, img = pcall(love.graphics.newImage, file)
-	if success then
-		print(file, img)
-		return img
-	end
-end
-
-local function updateImageRect(img)
-	local w, h = img.w * img.scale, img.h * img.scale
-	img.lt, img.rt = img.x - w/2, img.x + w/2
-	img.top, img.bot = img.y - h/2, img.y + h/2
-end
-
-local function addImage(imgData, name, x, y, scale)
-	x = x or 0;  y = y or 0;  scale = scale or 1
-	local i = {
-		img = imgData, name = name,
-		x = x, y = y, scale = scale
-	}
-	local w, h = imgData:getDimensions()
-	i.w, i.h = w, h
-	w, h = w * scale, h * scale
-	i.ox, i.oy = w/2, h/2
-	i.lt, i.rt, i.top, i.bot = x - w/2, x + w/2, y - h/2, y + h/2
-	table.insert(images, i)
-	shouldUpdate = true
+	self.images = {}
 end
 
 function script.draw(self)
-	for i,v in ipairs(images) do
+	for i,v in ipairs(self.images) do
 		love.graphics.draw(v.img, v.x, v.y, 0, v.scale, v.scale, v.ox, v.oy)
 	end
 	if self.hoverImg then
@@ -101,29 +75,102 @@ function script.draw(self)
 	end
 end
 
-function love.filedropped(file)
-	local path = file:getFilename()
-	print("FILE DROPPED: " .. tostring(file:getFilename()))
-	local img = safeLoadNewImage(file)
-	if img then
-		local x, y = Camera.current.pos.x, Camera.current.pos.y
-		addImage(img, path, x, y)
+local function updateImageRect(img)
+	local w, h = img.w * img.scale, img.h * img.scale
+	img.lt, img.rt = img.x - w/2, img.x + w/2
+	img.top, img.bot = img.y - h/2, img.y + h/2
+end
+
+local function addImage(self, imgData, name, x, y, scale)
+	x = x or 0;  y = y or 0;  scale = scale or 1
+	local i = {
+		img = imgData, name = name,
+		x = x, y = y, scale = scale
+	}
+	local w, h = imgData:getDimensions()
+	i.w, i.h = w, h
+	i.ox, i.oy = w/2, h/2
+	w, h = w * scale, h * scale
+	i.lt, i.rt, i.top, i.bot = x - w/2, x + w/2, y - h/2, y + h/2
+	table.insert(self.images, i)
+	shouldUpdate = true
+end
+
+local function getImageFromAbsolutePath(path)
+	local imgData
+	local file = assert(io.open(path, "rb"))
+	local fileData, error = love.filesystem.newFileData(file:read("*a"), "new.jpg")
+	file:close()
+	if not error then
+		return love.graphics.newImage(fileData)
 	end
 end
 
-function love.directorydropped(path)
-	print("DIRECTORY DROPPED: " .. tostring(path))
-	love.filesystem.mount(path, "newImages")
+local function safeLoadNewImage(file)
+	local success, img = pcall(love.graphics.newImage, file)
+	if success then
+		print(file, img)
+		return img
+	end
+end
+
+local function openProjectFile(self, absPath)
+	local data = fileman.decode_project_file(absPath)
+	if not data then  return  end
+	print("Open Project File --> ", data)
+
+	if not projectFilePath then -- Use opened project as the current one.
+		projectFilePath = absPath
+		if data.camera then -- Set camera pos and zoom from loaded data.
+			local cd = data.camera
+			local cam = Camera.current
+			cam.pos.x, cam.pos.y = cd.pos.x, cd.pos.y
+			cam.zoom = 1/cd.zoom
+		end
+	end
+
+	-- Append images from opened project to the current workspace.
+	local images = data[1] and data or data.images
+	for i,img in ipairs(images) do
+		-- Save Format = { path, z, pos = { x, y }, size = { x, y } }
+		local image = getImageFromAbsolutePath(img.path)
+		local w, h = image:getDimensions()
+		local scale = img.size.x / w
+		addImage(self, image, img.path, img.pos.x, -img.pos.y, scale)
+	end
+
+	return data
+end
+
+-- Gets a Love File object with an absolute path filename.
+function script.fileDropped(self, file)
+	local absPath = file:getFilename()
+	print("FILE DROPPED: " .. tostring(absPath))
+	local img = safeLoadNewImage(file)
+	if img then
+		local x, y = Camera.current.pos.x, Camera.current.pos.y
+		addImage(self, img, absPath, x, y)
+	elseif fileman.get_file_extension(absPath) == fileman.fileExt then
+		local data = openProjectFile(self, absPath)
+
+	end
+end
+
+-- Gets the absolute path to a directory, which is allowed to be mounted with love.filesystem.
+--   From that you can get the local and absolute paths of files in the directory.
+function script.directoryDropped(self, absDirPath)
+	print("DIRECTORY DROPPED: " .. tostring(absDirPath))
+	love.filesystem.mount(absDirPath, "newImages")
 	local files = love.filesystem.getDirectoryItems("newImages")
 	local x, y = Camera.current.pos.x, Camera.current.pos.y
-	for k,subPath in pairs(files) do
-		subPath = "newImages/" .. subPath
-		local info = love.filesystem.getInfo(subPath)
+	for k,path in pairs(files) do
+		local mountedPath = "newImages/" .. path
+		local info = love.filesystem.getInfo(mountedPath)
 		if not info then
-			print("ERROR: Can't get file info for path: \n  " .. subPath)
+			print("ERROR: Can't get file info for path: \n  " .. mountedPath)
 		elseif info.type == "file" then
-			local img = safeLoadNewImage(subPath)
-			if img then  addImage(img, subPath, x, y)  end
+			local img = safeLoadNewImage(mountedPath)
+			if img then  addImage(self, img, absDirPath .. "/" .. path, x, y)  end
 		end
 	end
 end
@@ -134,7 +181,7 @@ end
 
 local function updateHoverList(self, except)
 	self.hoverList = {}
-	for i,img in ipairs(images) do
+	for i,img in ipairs(self.images) do
 		if posOverlapsImage(img, self.mwx, self.mwy) then
 			table.insert(self.hoverList, img)
 		end
@@ -220,8 +267,8 @@ function script.input(self, name, value, change)
 		end
 	elseif name == "delete" and change == 1 then
 		if self.hoverImg then
-			for i,v in ipairs(images) do
-				if v == self.hoverImg then  table.remove(images, i)  end
+			for i,v in ipairs(self.images) do
+				if v == self.hoverImg then  table.remove(self.images, i)  end
 			end
 			self.hoverImg = nil
 		end

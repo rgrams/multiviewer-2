@@ -18,7 +18,7 @@ local clearColor = { 0.2, 0.2, 0.2 }
 local root
 local editor_script = require "editor_script"
 
-function love.load()
+function love.load(arg)
 	Input.init()
 	Input.bind(require("input_bindings"))
 
@@ -57,6 +57,14 @@ function love.draw()
 	love.graphics.setColor(1, 1, 1, 1)
    local avgDt = love.timer.getAverageDelta() * 1000
    love.graphics.print(string.format("%.4f", avgDt))
+end
+
+function love.filedropped(file)
+	world:call("fileDropped", file)
+end
+
+function love.directorydropped(absDirPath)
+	world:call("directoryDropped", absDirPath)
 end
 
 function love.resize(w, h)

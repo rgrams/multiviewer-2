@@ -1,6 +1,8 @@
 
 local M = {}
 
+local json = require "lib.json"
+
 M.fileExt = "multiview"
 local data = {}
 
@@ -23,12 +25,12 @@ function M.ensure_file_extension(path)
 	return path
 end
 
-function M.load_project_file(path)
+function M.decode_project_file(path)
 	local f = io.open(path, "r")
 	local str = f:read("*a")
-	local images = json.decode(str)
+	local data = json.parse(str)
 	-- pprint(images)
-	return images
+	return data
 end
 
 return M
