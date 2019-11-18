@@ -77,6 +77,25 @@ function script.draw(self)
 	end
 end
 
+local function changeDepth(self, image, dir)
+	local from
+	for i,img in ipairs(self.images) do
+		if img == image then
+			from = i
+			break
+		end
+	end
+	if not from then  return  end
+	local to = math.clamp(from + 1 * dir, 1, #self.images)
+	if Input.get("ctrl").value == 1 then
+		to = dir == 1 and #self.images or 1
+	end
+	if to ~= from then
+		table.remove(self.images, from)
+		table.insert(self.images, to, image)
+	end
+end
+
 local function setDirty(self, dirty)
 	if not self.projectFilePath then  return  end
 	if dirty and not self.projectIsDirty then
@@ -326,6 +345,14 @@ function script.input(self, name, value, change)
 			self.panning = { x = Camera.current.pos.x, y = Camera.current.pos.y }
 		else
 			self.panning = nil
+		end
+	elseif name == "move up" and change == 1 then
+		if self.hoverImg then
+			changeDepth(self, self.hoverImg, 1)
+		end
+	elseif name == "move down" and change == 1 then
+		if self.hoverImg then
+			changeDepth(self, self.hoverImg, -1)
 		end
 	elseif name == "delete" and change == 1 then
 		setDirty(self, true)
