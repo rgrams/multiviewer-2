@@ -16,7 +16,7 @@ function M.get_file_extension(path)
 end
 
 function M.get_filename_from_path(path)
-	return string.match(path, ".*[\\/%.]([^.]*)%.multiview$")
+	return string.match(path, ".*[\\/]([^\\/%.]*)%.multiview$")
 end
 
 function M.ensure_file_extension(path)
@@ -30,13 +30,21 @@ function M.ensure_file_extension(path)
 end
 
 function M.decode_project_file(path)
-	local f = io.open(path, "r")
-	local str = f:read("*a")
+	local file = io.open(path, "r")
+	local str = file:read("*a")
+	file:close()
 	if #str > 0 then
-		return json.parse(str)
+		return json.decode(str)
 	else
 		return {}
 	end
+end
+
+function M.encode_project_file(data, path)
+	local file = io.open(path, "w+")
+	local str = json.encode(data)
+	file:write(str)
+	file:close()
 end
 
 return M
