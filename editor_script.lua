@@ -115,11 +115,17 @@ end
 
 local function getImageFromAbsolutePath(path)
 	local imgData
-	local file = assert(io.open(path, "rb"))
+	local file, error = io.open(path, "rb")
+	if error then
+		print(error)
+		return
+	end
 	local fileData, error = love.filesystem.newFileData(file:read("*a"), "new.jpg")
 	file:close()
 	if not error then
 		return love.graphics.newImage(fileData)
+	else
+		print(error)
 	end
 end
 
@@ -159,9 +165,11 @@ local function openProjectFile(self, absPath)
 	for i,img in ipairs(images) do
 		-- Save Format = { path, z, pos = { x, y }, size = { x, y } }
 		local image = getImageFromAbsolutePath(img.path)
-		local w, h = image:getDimensions()
-		local scale = img.size.x / w
-		addImage(self, image, img.path, img.pos.x, -img.pos.y, scale, true)
+		if image then
+			local w, h = image:getDimensions()
+			local scale = img.size.x / w
+			addImage(self, image, img.path, img.pos.x, -img.pos.y, scale, true)
+		end
 	end
 
 	return data
