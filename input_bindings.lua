@@ -21,7 +21,8 @@ local bindings = {
 	{ "zoom", "axis", "mouse", "wheel y" },
 	{ "pan", "button", "mouse", 3 },
 
-	{ "ctrl", "button", "scancode", "lctrl"}
+	{ "ctrl", "button", "scancode", "lctrl"},
+	{ "alt", "button", "scancode", "lalt"},
 }
 
 return bindings
