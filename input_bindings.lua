@@ -10,6 +10,8 @@ local bindings = {
 	{ "confirm", "button", "scancode", "return" },
 
 	{ "delete", "button", "scancode", "delete" },
+	{ "copy", "button", "key", "c" },
+	{ "paste", "button", "key", "v" },
 	{ "move up", "button", "scancode", "pageup"},
 	{ "move down", "button", "scancode", "pagedown"},
 

@@ -367,6 +367,18 @@ function script.input(self, name, value, change)
 			saveProject(self)
 			setDirty(self, false)
 		end
+	elseif name == "copy" and change == 1 then
+		if Input.get("ctrl").value == 1 and self.hoverImg then
+			love.system.setClipboardText(self.hoverImg.name)
+		end
+	elseif name == "paste" and change == 1 then
+		if Input.get("ctrl").value == 1 then
+			local path = love.system.getClipboardText()
+			local image = getImageFromAbsolutePath(path)
+			if image then
+				addImage(self, image, path, self.mwx, self.mwy)
+			end
+		end
 	elseif name == "quit" and change == 1 then
 		love.event.quit(0)
 	end
