@@ -30,6 +30,7 @@ function M.ensure_file_extension(path)
 end
 
 function M.decode_project_file(path)
+	if M.get_file_extension(path) ~= M.fileExt then  return  end
 	local file = io.open(path, "r")
 	local str = file:read("*a")
 	file:close()
