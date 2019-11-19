@@ -321,8 +321,8 @@ function script.input(self, name, value, change)
 			self.dragging = nil
 			self.dropTarget = nil
 		end
-	elseif name == "scale" then
-		if change == 1 and self.hoverImg then
+	elseif name == "scale" or name == "scale2" then
+		if change == 1 and self.hoverImg and not self.scaling then
 			self.scaling = true
 			self.dragx, self.dragy = self.hoverImg.x - self.mwx, self.hoverImg.y - self.mwy
 			self.dragStartDist = vector.len(self.dragx, self.dragy)
