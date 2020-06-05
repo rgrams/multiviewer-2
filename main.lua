@@ -7,14 +7,14 @@ input = require "input"
 local Camera = require "lib.Camera"
 local Editor = require "editor_script"
 
-local clearColor = { 0.2, 0.2, 0.2 }
+local backgroundColor = { 0.2, 0.2, 0.2 }
 
 local editor
 camera = nil
 
 function love.load(arg)
 	love.graphics.setDefaultFilter("nearest", "nearest")
-	love.graphics.setBackgroundColor(clearColor)
+	love.graphics.setBackgroundColor(backgroundColor)
 
 	local font = love.graphics.newFont("font/source/OpenSans-Semibold.ttf", 15)
 	love.graphics.setFont(font)
