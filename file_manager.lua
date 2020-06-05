@@ -16,7 +16,7 @@ function M.get_file_extension(path)
 end
 
 function M.get_filename_from_path(path)
-	return string.match(path, ".*[\\/]([^\\/%.]*)%.multiview$")
+	return string.match(path, ".*[\\/]([^\\/%.]*)%" .. M.fileExt .. "$")
 end
 
 function M.ensure_file_extension(path)

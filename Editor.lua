@@ -174,7 +174,7 @@ function script.openProjectFile(self, absPath)
 		if #self.images ~= 0 then  self.projectIsDirty = true  end
 
 		local filename = fileman.get_filename_from_path(absPath)
-		local title = baseTitle .. filename .. ".multiview "
+		local title = baseTitle .. filename .. fileman.fileExt
 		if self.projectIsDirty then  title = title .. "*"  end
 		love.window.setTitle(title)
 
@@ -256,7 +256,7 @@ end
 
 local function saveProject(self)
 	if not self.projectFilePath then
-		self.projectFilePath = love.filesystem.getWorkingDirectory() .. "/_project.multiview"
+		self.projectFilePath = love.filesystem.getWorkingDirectory() .. "/_project" .. fileman.fileExt
 		self.projectIsDirty = true
 	end
 	if self.projectIsDirty then
