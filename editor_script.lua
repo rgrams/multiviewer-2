@@ -96,7 +96,7 @@ local function changeDepth(self, image, dir)
 	end
 	if not from then  return  end
 	local to = clamp(from + 1 * dir, 1, #self.images)
-	if input.get("ctrl") then
+	if input.isPressed("ctrl") then
 		to = dir == 1 and #self.images or 1
 	end
 	if to ~= from then
@@ -366,16 +366,16 @@ function script.input(self, name, change)
 			self.hoverImg = nil
 		end
 	elseif name == "save" and change == 1 then
-		if input.get("ctrl") then
+		if input.isPressed("ctrl") then
 			saveProject(self)
 			setDirty(self, false)
 		end
 	elseif name == "copy" and change == 1 then
-		if input.get("ctrl") and self.hoverImg then
+		if input.isPressed("ctrl") and self.hoverImg then
 			love.system.setClipboardText(self.hoverImg.name)
 		end
 	elseif name == "paste" and change == 1 then
-		if input.get("ctrl") then
+		if input.isPressed("ctrl") then
 			local path = love.system.getClipboardText()
 			local image = getImageFromAbsolutePath(path)
 			if image then
@@ -383,7 +383,7 @@ function script.input(self, name, change)
 			end
 		end
 	elseif name == "confirm" and change == 1 then
-		if input.get("alt") then -- Toggle borderless.
+		if input.isPressed("alt") then -- Toggle borderless.
 			local w, h, flags = love.window.getMode()
 			flags.borderless = not flags.borderless
 			love.window.setMode(w, h, flags)

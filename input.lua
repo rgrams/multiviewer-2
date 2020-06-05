@@ -12,7 +12,7 @@ local bindings = {
 function M.callback(name, change)
 end
 
-function M.get(name)
+function M.isPressed(name)
 	if actions[name] then
 		return actions[name].isPressed
 	end
