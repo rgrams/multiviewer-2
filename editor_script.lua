@@ -106,7 +106,6 @@ local function changeDepth(self, image, dir)
 end
 
 local function setDirty(self, dirty)
-	if not self.projectFilePath then  return  end
 	if dirty and not self.projectIsDirty then
 		self.projectIsDirty = true
 		local title = love.window.getTitle()
@@ -256,13 +255,13 @@ local function makeProjectData(self)
 end
 
 local function saveProject(self)
-	if self.projectFilePath then
-		if self.projectIsDirty then
-			local data = makeProjectData(self)
-			fileman.encode_project_file(data, self.projectFilePath)
-		end
-	else
-		print("WARNING: Save Project - No project file path, can't save.")
+	if not self.projectFilePath then
+		self.projectFilePath = love.filesystem.getWorkingDirectory() .. "/_project.multiview"
+		self.projectIsDirty = true
+	end
+	if self.projectIsDirty then
+		local data = makeProjectData(self)
+		fileman.encode_project_file(data, self.projectFilePath)
 	end
 end
 
