@@ -20,9 +20,9 @@ function love.conf(t)
 	t.modules.image = true
 	t.modules.joystick = false
 	t.modules.keyboard = true
-	t.modules.math = true
+	t.modules.math = false
 	t.modules.mouse = true
-	t.modules.physics = true
+	t.modules.physics = false
 	t.modules.sound = false
 	t.modules.system = false
 	t.modules.thread = false
