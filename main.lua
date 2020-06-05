@@ -5,7 +5,7 @@ vector = require "lib.vec2xy"
 input = require "input"
 
 local Camera = require "lib.Camera"
-local Editor = require "editor_script"
+local Editor = require "Editor"
 
 local backgroundColor = { 0.2, 0.2, 0.2 }
 
