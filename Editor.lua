@@ -339,10 +339,10 @@ function script.input(self, name, change)
 		end
 	elseif name == "zoom in" then
 		setDirty(self, true)
-		camera:zoomIn(zoomRate)
+		camera:zoomIn(zoomRate, self.msx, self.msy)
 	elseif name == "zoom out" then
 		setDirty(self, true)
-		camera:zoomIn(-zoomRate)
+		camera:zoomIn(-zoomRate, self.msx, self.msy)
 	elseif name == "pan" then
 		if change == 1 then
 			self.panning = { x = camera.pos.x, y = camera.pos.y }
