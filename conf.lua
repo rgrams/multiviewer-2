@@ -11,4 +11,23 @@ function love.conf(t)
 	t.window.fullscreentype = "desktop"
 	t.window.vsync = 1
 	t.window.display = 1
+
+	t.modules.audio = false
+	t.modules.data = false
+	t.modules.event = true
+	t.modules.font = true
+	t.modules.graphics = true
+	t.modules.image = true
+	t.modules.joystick = false
+	t.modules.keyboard = true
+	t.modules.math = true
+	t.modules.mouse = true
+	t.modules.physics = true
+	t.modules.sound = false
+	t.modules.system = false
+	t.modules.thread = false
+	t.modules.timer = true
+	t.modules.touch = true
+	t.modules.video = false
+	t.modules.window = true
 end
