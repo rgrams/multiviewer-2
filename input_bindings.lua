@@ -1,29 +1,29 @@
 
 -- {name, type, device, input}
 local bindings = {
-	{ "quit", "button", "key", "escape" },
+	{ "key", "escape" , "quit" },
 
-	{ "save", "button", "key", "s" },
-	{ "rename", "button", "scancode", "f2" },
-	{ "text", "text", "text", "text" },
-	{ "backspace", "button", "scancode", "backspace" },
-	{ "confirm", "button", "scancode", "return" },
+	{ "key", "s", "save" },
+	{ "scancode", "f2", "rename" },
+	{ "scancode", "backspace", "backspace" },
+	{ "scancode", "return", "confirm" },
 
-	{ "delete", "button", "scancode", "delete" },
-	{ "copy", "button", "key", "c" },
-	{ "paste", "button", "key", "v" },
-	{ "move up", "button", "scancode", "pageup"},
-	{ "move down", "button", "scancode", "pagedown"},
+	{ "scancode", "delete", "delete" },
+	{ "key", "c", "copy" },
+	{ "key", "v", "paste" },
+	{ "scancode", "pageup", "move up" },
+	{ "scancode", "pagedown", "move down" },
 
-	{ "click", "button", "mouse", 1 },
-	{ "scale", "button", "mouse", 2 },
-	{ "scale2", "button", "mouse", 4 },
-	{ "snap", "button", "scancode", "lshift" },
-	{ "zoom", "axis", "mouse", "wheel y" },
-	{ "pan", "button", "mouse", 3 },
+	{ "mouse", 1, "click" },
+	{ "mouse", 2, "scale" },
+	{ "mouse", 4, "scale" },
+	{ "scancode", "lshift" , "snap" },
+	{ "wheel", 1, "zoom in" },
+	{ "wheel", -1, "zoom out" },
+	{ "mouse", 3, "pan" },
 
-	{ "ctrl", "button", "scancode", "lctrl"},
-	{ "alt", "button", "scancode", "lalt"},
+	{ "scancode", "lctrl", "ctrl" },
+	{ "scancode", "lalt", "alt" },
 }
 
 return bindings

@@ -6,8 +6,13 @@ local script = {}
 local baseTitle = "Multiviewer 2.0 - "
 local zoomRate = 0.1
 
+local floor = math.floor
+local function round(x, interval)
+	if interval then return floor(x / interval + 0.5) * interval end
+	return floor(x + 0.5)
+end
+
 function script.init(self)
-	Input.enable(self)
 	self.msx, self.msy = 0, 0
 	self.mwx, self.mwy = 0, 0
 	self.lastmwx, self.lastmwy = 0, 0
@@ -30,7 +35,7 @@ function script.draw(self)
 		love.graphics.rectangle("line", img.lt, img.top, img.w*img.scale, img.h*img.scale)
 
 		if self.scaling then
-			local z = Camera.current.zoom
+			local z = camera.zoom
 
 			-- Base scale line & end square.
 			love.graphics.setLineWidth(4/z)
@@ -64,7 +69,7 @@ function script.draw(self)
 			love.graphics.scale(1/z, 1/z)
 
 			local tx, ty = self.mwx*z + 10, self.mwy*z - 30
-			local str = "x" .. math.round(self.dragScale, 0.001)
+			local str = "x" .. round(self.dragScale, 0.001)
 			local font = love.graphics.getFont()
 			local fw, fh = font:getWidth("x1.000") + 9, font:getHeight() + 7
 			love.graphics.setColor(1, 1, 1, 0.5)
@@ -87,7 +92,7 @@ local function changeDepth(self, image, dir)
 	end
 	if not from then  return  end
 	local to = math.clamp(from + 1 * dir, 1, #self.images)
-	if Input.get("ctrl").value == 1 then
+	if input.get("ctrl") then
 		to = dir == 1 and #self.images or 1
 	end
 	if to ~= from then
@@ -172,9 +177,8 @@ function script.openProjectFile(self, absPath)
 
 		if data.camera then -- Set camera pos and zoom from loaded data.
 			local cd = data.camera
-			local cam = Camera.current
-			cam.pos.x, cam.pos.y = cd.pos.x, -cd.pos.y
-			cam.zoom = 1/cd.zoom
+			camera.pos.x, camera.pos.y = cd.pos.x, -cd.pos.y
+			camera.zoom = 1/cd.zoom
 		end
 	end
 
@@ -228,9 +232,9 @@ local function makeProjectData(self)
 	local data = { camera = {}, images = {} }
 
 	-- Set camera data.
-	local cd, cam = data.camera, Camera.current
-	cd.zoom = 1/cam.zoom
-	cd.pos = { x = cam.pos.x, y = -cam.pos.y }
+	local cd = data.camera
+	cd.zoom = 1/camera.zoom
+	cd.pos = { x = camera.pos.x, y = -camera.pos.y }
 
 	-- Set image data.
 	local id = data.images
@@ -273,7 +277,7 @@ end
 
 function script.update(self, dt)
 	self.msx, self.msy = love.mouse.getPosition()
-	self.mwx, self.mwy = Camera.current:screenToWorld(self.msx, self.msy)
+	self.mwx, self.mwy = camera:screenToWorld(self.msx, self.msy)
 
 	if self.dragging then
 		local img = self.hoverImg
@@ -302,8 +306,8 @@ function script.update(self, dt)
 	if self.panning then
 		local dx, dy = self.msx - self.lastmsx, self.msy - self.lastmsy
 		if dx ~= 0 or dy ~= 0 then  setDirty(self, true)  end
-		dx, dy = Camera.current:screenToWorld(dx, dy, true)
-		local camPos = Camera.current.pos
+		dx, dy = camera:screenToWorld(dx, dy, true)
+		local camPos = camera.pos
 		camPos.x, camPos.y = camPos.x - dx, camPos.y - dy
 	end
 
@@ -311,7 +315,7 @@ function script.update(self, dt)
 	self.lastmwx, self.lastmwy = self.mwx, self.mwy
 end
 
-function script.input(self, name, value, change)
+function script.input(self, name, change)
 	shouldUpdate = true
 	if name == "click" then
 		if change == 1 and self.hoverImg then
@@ -321,7 +325,7 @@ function script.input(self, name, value, change)
 			self.dragging = nil
 			self.dropTarget = nil
 		end
-	elseif name == "scale" or name == "scale2" then
+	elseif name == "scale" then
 		if change == 1 and self.hoverImg and not self.scaling then
 			self.scaling = true
 			self.dragx, self.dragy = self.hoverImg.x - self.mwx, self.hoverImg.y - self.mwy
@@ -330,12 +334,15 @@ function script.input(self, name, value, change)
 		elseif change == -1 then
 			self.scaling = false
 		end
-	elseif name == "zoom" then
+	elseif name == "zoom in" then
 		setDirty(self, true)
-		Camera.current:zoomIn(value * zoomRate)
+		camera:zoomIn(zoomRate)
+	elseif name == "zoom out" then
+		setDirty(self, true)
+		camera:zoomIn(-zoomRate)
 	elseif name == "pan" then
-		if value == 1 then
-			self.panning = { x = Camera.current.pos.x, y = Camera.current.pos.y }
+		if change == 1 then
+			self.panning = { x = camera.pos.x, y = camera.pos.y }
 		else
 			self.panning = nil
 		end
@@ -356,16 +363,16 @@ function script.input(self, name, value, change)
 			self.hoverImg = nil
 		end
 	elseif name == "save" and change == 1 then
-		if Input.get("ctrl").value == 1 then
+		if input.get("ctrl") then
 			saveProject(self)
 			setDirty(self, false)
 		end
 	elseif name == "copy" and change == 1 then
-		if Input.get("ctrl").value == 1 and self.hoverImg then
+		if input.get("ctrl") and self.hoverImg then
 			love.system.setClipboardText(self.hoverImg.name)
 		end
 	elseif name == "paste" and change == 1 then
-		if Input.get("ctrl").value == 1 then
+		if input.get("ctrl") then
 			local path = love.system.getClipboardText()
 			local image = getImageFromAbsolutePath(path)
 			if image then
@@ -373,7 +380,7 @@ function script.input(self, name, value, change)
 			end
 		end
 	elseif name == "confirm" and change == 1 then
-		if Input.get("alt").value == 1 then -- Toggle borderless.
+		if input.get("alt") then -- Toggle borderless.
 			local w, h, flags = love.window.getMode()
 			flags.borderless = not flags.borderless
 			love.window.setMode(w, h, flags)
@@ -384,5 +391,10 @@ function script.input(self, name, value, change)
 	end
 end
 
+local mt = { __index = script }
 
-return script
+function new(self)
+	return setmetatable({}, mt)
+end
+
+return new
