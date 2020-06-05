@@ -12,6 +12,10 @@ local function round(x, interval)
 	return floor(x + 0.5)
 end
 
+local function clamp(x, min, max)
+	return x > min and (x < max and x or max) or min
+end
+
 function script.init(self)
 	self.msx, self.msy = 0, 0
 	self.mwx, self.mwy = 0, 0
@@ -91,7 +95,7 @@ local function changeDepth(self, image, dir)
 		end
 	end
 	if not from then  return  end
-	local to = math.clamp(from + 1 * dir, 1, #self.images)
+	local to = clamp(from + 1 * dir, 1, #self.images)
 	if input.get("ctrl") then
 		to = dir == 1 and #self.images or 1
 	end

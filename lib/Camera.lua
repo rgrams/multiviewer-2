@@ -29,7 +29,7 @@ function set_viewport(camera, x, y, w, h)
 	local align = camera.viewport_align
 	local pivot = camera.pivot
 	if aspect then  -- letterbox
-		vp.w = math.min(w, h * aspect)
+		vp.w = min(w, h * aspect)
 		vp.h = vp.w / aspect
 		vp.x = x + (w - vp.w) * align.x
 		vp.y = y + (h - vp.h) * align.y
