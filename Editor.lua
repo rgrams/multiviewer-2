@@ -3,7 +3,7 @@ local fileman = require "file_manager"
 
 local script = {}
 
-local baseTitle = "Multiviewer 2.0 - "
+local baseTitle = "Multiviewer 2.1 - "
 local defaultWindowTitleName = "No project"
 local zoomRate = 0.1
 

@@ -1,7 +1,7 @@
 
 function love.conf(t)
 	t.console = false
-	t.window.title = "Multiviewer 2.0 - No project"
+	t.window.title = "Multiviewer 2.1 - No project"
 	t.window.icon = "Multiviewer_icon.png"
 	t.window.width = 800
 	t.window.height = 600
