@@ -6,6 +6,7 @@ local script = {}
 local baseTitle = "Multiviewer 2.1 - "
 local defaultWindowTitleName = "No project"
 local zoomRate = 0.1
+local dragZoomRate = 0.005
 
 local floor = math.floor
 local function round(x, interval)
@@ -288,9 +289,18 @@ function script.update(self, dt)
 	if self.panning then
 		local dx, dy = self.msx - self.lastmsx, self.msy - self.lastmsy
 		if dx ~= 0 or dy ~= 0 then  setDirty(self, true)  end
-		dx, dy = camera:screenToWorld(dx, dy, true)
-		local camPos = camera.pos
-		camPos.x, camPos.y = camPos.x - dx, camPos.y - dy
+
+		if input.isPressed("ctrl") then
+			local z = -dy * dragZoomRate
+			-- Zoom around the drag start position, since it's a bit weird to zoom
+			-- around a moving cursor (you'd be dragging to zoom and change the zoom pos).
+			camera:zoomIn(z, self.panning.x, self.panning.y)
+		else
+			dx, dy = camera:screenToWorld(dx, dy, true)
+			local camPos = camera.pos
+			camPos.x, camPos.y = camPos.x - dx, camPos.y - dy
+		end
+
 		-- Now that camera has moved, update mouse world pos for smoother dragging & scaling.
 		self.mwx, self.mwy = camera:screenToWorld(self.msx, self.msy)
 	end
@@ -350,7 +360,7 @@ function script.input(self, name, change)
 		camera:zoomIn(-zoomRate, self.msx, self.msy)
 	elseif name == "pan" then
 		if change == 1 then
-			self.panning = { x = camera.pos.x, y = camera.pos.y }
+			self.panning = { x = self.msx, y = self.msy }
 		else
 			self.panning = nil
 		end
