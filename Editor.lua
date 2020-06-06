@@ -4,6 +4,7 @@ local fileman = require "file_manager"
 local script = {}
 
 local baseTitle = "Multiviewer 2.0 - "
+local defaultWindowTitleName = "No project"
 local zoomRate = 0.1
 
 local floor = math.floor
@@ -105,17 +106,20 @@ local function changeDepth(self, image, dir)
 	end
 end
 
+local function setWindowTitle(self)
+	local filename = self.projectFileName or defaultWindowTitleName
+	local title = baseTitle .. filename
+	if self.projectIsDirty then  title = title .. "*"  end
+	love.window.setTitle(title)
+end
+
 local function setDirty(self, dirty)
 	if dirty and not self.projectIsDirty then
 		self.projectIsDirty = true
-		local title = love.window.getTitle()
-		title = title .. "*"
-		love.window.setTitle(title)
+		setWindowTitle(self)
 	elseif not dirty and self.projectIsDirty then
 		self.projectIsDirty = false
-		local title = love.window.getTitle()
-		title = string.sub(title, 1, -2)
-		love.window.setTitle(title)
+		setWindowTitle(self)
 	end
 end
 
@@ -171,12 +175,11 @@ function script.openProjectFile(self, absPath)
 	if not self.projectFilePath then -- Use opened project as the current one.
 		self.projectIsDirty = false
 		self.projectFilePath = absPath
+		self.projectFileName = fileman.get_filename_from_path(absPath)
+
 		if #self.images ~= 0 then  self.projectIsDirty = true  end
 
-		local filename = fileman.get_filename_from_path(absPath)
-		local title = baseTitle .. filename .. fileman.fileExt
-		if self.projectIsDirty then  title = title .. "*"  end
-		love.window.setTitle(title)
+		setWindowTitle(self)
 
 		if data.camera then -- Set camera pos and zoom from loaded data.
 			local cd = data.camera
@@ -209,7 +212,6 @@ function script.fileDropped(self, file)
 		addImage(self, img, absPath, x, y)
 	elseif fileman.get_file_extension(absPath) == fileman.fileExt then
 		local data = script.openProjectFile(self, absPath)
-
 	end
 end
 
@@ -256,7 +258,8 @@ end
 
 local function saveProject(self)
 	if not self.projectFilePath then
-		self.projectFilePath = love.filesystem.getWorkingDirectory() .. "/_project" .. fileman.fileExt
+		self.projectFileName = "_project" .. fileman.fileExt
+		self.projectFilePath = love.filesystem.getWorkingDirectory() .. "/" .. self.projectFileName
 		self.projectIsDirty = true
 	end
 	if self.projectIsDirty then
