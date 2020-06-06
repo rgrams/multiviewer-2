@@ -285,6 +285,16 @@ function script.update(self, dt)
 	self.msx, self.msy = love.mouse.getPosition()
 	self.mwx, self.mwy = camera:screenToWorld(self.msx, self.msy)
 
+	if self.panning then
+		local dx, dy = self.msx - self.lastmsx, self.msy - self.lastmsy
+		if dx ~= 0 or dy ~= 0 then  setDirty(self, true)  end
+		dx, dy = camera:screenToWorld(dx, dy, true)
+		local camPos = camera.pos
+		camPos.x, camPos.y = camPos.x - dx, camPos.y - dy
+		-- Now that camera has moved, update mouse world pos for smoother dragging & scaling.
+		self.mwx, self.mwy = camera:screenToWorld(self.msx, self.msy)
+	end
+
 	if self.dragging then
 		local img = self.hoverImg
 		if img then
@@ -307,14 +317,6 @@ function script.update(self, dt)
 	else
 		updateHoverList(self)
 		self.hoverImg = self.hoverList[#self.hoverList]
-	end
-
-	if self.panning then
-		local dx, dy = self.msx - self.lastmsx, self.msy - self.lastmsy
-		if dx ~= 0 or dy ~= 0 then  setDirty(self, true)  end
-		dx, dy = camera:screenToWorld(dx, dy, true)
-		local camPos = camera.pos
-		camPos.x, camPos.y = camPos.x - dx, camPos.y - dy
 	end
 
 	self.lastmsx, self.lastmsy = self.msx, self.msy
