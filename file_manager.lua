@@ -3,13 +3,13 @@ local M = {}
 
 local json = require "lib.json"
 
-M.fileExt = "multiview"
+M.fileExt = ".multiview"
 local data = {}
 
 function M.get_file_extension(path)
 	local dotPos = string.find(path, "%.[^%.]+$") -- find pattern: dot, any number of non-dot characters, then end of string
 	if dotPos then
-		return string.sub(path, dotPos+1)
+		return string.sub(path, dotPos)
 	else
 		return nil
 	end
@@ -20,11 +20,10 @@ function M.get_filename_from_path(path)
 end
 
 function M.ensure_file_extension(path)
-	local dotPos = string.find(path, "%.[^%.]+$")
-	if dotPos and string.sub(path, dotPos+1) == M.fileExt then
+	if M.get_file_extension(path) == M.fileExt then
 		return path
 	else
-		path = path .. "." .. M.fileExt
+		path = path .. M.fileExt
 	end
 	return path
 end
