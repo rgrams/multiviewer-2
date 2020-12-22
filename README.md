@@ -4,7 +4,7 @@ _A very basic multi-image viewer intended for displaying art references. Made wi
 
 A rewrite of my [Defold Multiviewer](https://github.com/rgrams/multiviewer) in Love2D.
 
-[Demo .gif of the Defold version](https://forum.defold.com/uploads/default/original/2X/6/65b3bb071a006da7c834f519fa02b55646d410db.gif "A short gif of usage")
+![Demo .gif of the Defold version](demo.gif)
 
 ### Missing features from Defold version:
 * No native file dialogs (which only worked on Windows and MacOS anyway).
