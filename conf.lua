@@ -24,7 +24,7 @@ function love.conf(t)
 	t.modules.mouse = true
 	t.modules.physics = false
 	t.modules.sound = false
-	t.modules.system = false
+	t.modules.system = true -- Need for copy-paste.
 	t.modules.thread = false
 	t.modules.timer = true
 	t.modules.touch = true
