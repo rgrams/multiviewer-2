@@ -211,12 +211,14 @@ end
 -- Gets a Love File object with an absolute path filename.
 function script.fileDropped(self, file)
 	local absPath = file:getFilename()
-	local img = safeLoadNewImage(file)
-	if img then
-		local x, y = self.mwx, self.mwy
-		addImage(self, img, absPath, x, y)
-	elseif fileman.get_file_extension(absPath) == fileman.fileExt then
-		local data = script.openProjectFile(self, absPath)
+	if fileman.get_file_extension(absPath) == fileman.fileExt then
+		script.openProjectFile(self, absPath)
+	else
+		local img = safeLoadNewImage(file)
+		if img then
+			local x, y = self.mwx, self.mwy
+			addImage(self, img, absPath, x, y)
+		end
 	end
 end
 
