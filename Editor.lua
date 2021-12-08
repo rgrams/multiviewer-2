@@ -3,7 +3,6 @@ local fileman = require "file_manager"
 
 local script = {}
 
-local baseTitle = "Multiviewer 2.1 - "
 local defaultWindowTitleName = "No project"
 local zoomRate = 0.1
 local dragZoomRate = 0.005
@@ -109,7 +108,7 @@ end
 
 local function setWindowTitle(self)
 	local filename = self.projectFileName or defaultWindowTitleName
-	local title = baseTitle .. filename
+	local title = BASE_WINDOW_TITLE .. filename
 	if self.projectIsDirty then  title = title .. "*"  end
 	love.window.setTitle(title)
 end

@@ -3,6 +3,8 @@ io.stdout:setvbuf("no")
 require "love_run"
 vector = require "lib.vec2xy"
 input = require "input"
+VERSION = "2.2"
+BASE_WINDOW_TITLE = ("Multiviewer %s - "):format(VERSION)
 
 local Camera = require "lib.Camera"
 local Editor = require "Editor"
@@ -13,6 +15,7 @@ local editor
 camera = nil
 
 function love.load(arg)
+	love.window.setTitle(BASE_WINDOW_TITLE .. "No project")
 	love.graphics.setDefaultFilter("nearest", "nearest")
 	love.graphics.setBackgroundColor(backgroundColor)
 
