@@ -147,18 +147,23 @@ local function addImage(self, imgData, name, x, y, scale, dontDirty)
 end
 
 local function getImageFromAbsolutePath(path)
-	local imgData
 	local file, error = io.open(path, "rb")
 	if error then
 		print(error)
 		return
 	end
-	local fileData, error = love.filesystem.newFileData(file:read("*a"), "new.jpg")
+	local filename = fileman.get_filename_from_path(path) or "new.jpg"
+	local fileData, error = love.filesystem.newFileData(file:read("*a"), filename)
 	file:close()
 	if not error then
-		return love.graphics.newImage(fileData)
+		local isSuccess, result = pcall(love.graphics.newImage, fileData)
+		if not isSuccess then
+			print("Error generating image from file:\n   "..result)
+		else
+			return result
+		end
 	else
-		print(error)
+		print("Error reading file:\n   "..error)
 	end
 end
 
