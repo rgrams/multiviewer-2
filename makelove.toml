@@ -1,0 +1,10 @@
+name = "multiviewer-2"
+default_targets = ["appimage"]
+build_directory = "dist"
+
+icon_file = "Multiviewer_icon.ico"
+
+love_files = [
+    "::git-ls-tree::",
+    "-*/.*",
+]
