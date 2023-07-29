@@ -17,6 +17,7 @@ local bindings = {
 	{ "mouse", 1, "click" },
 	{ "mouse", 2, "scale" },
 	{ "mouse", 4, "scale" },
+	{ "scancode", "s", "scale" },
 	{ "scancode", "lshift" , "snap" },
 	{ "wheel", 1, "zoom in" },
 	{ "wheel", -1, "zoom out" },
