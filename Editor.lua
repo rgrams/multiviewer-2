@@ -1,7 +1,7 @@
 
 local fileman = require "file_manager"
 
-local script = {}
+local Editor = {}
 
 local defaultWindowTitleName = "No project"
 local zoomRate = 0.1
@@ -17,7 +17,7 @@ local function clamp(x, min, max)
 	return x > min and (x < max and x or max) or min
 end
 
-function script.init(self)
+function Editor.init(self)
 	self.msx, self.msy = 0, 0
 	self.mwx, self.mwy = 0, 0
 	self.lastmwx, self.lastmwy = 0, 0
@@ -27,7 +27,7 @@ function script.init(self)
 	self.projectIsDirty = false
 end
 
-function script.draw(self)
+function Editor.draw(self)
 	love.graphics.setColor(1, 1, 1, 1)
 	for i,v in ipairs(self.images) do
 		love.graphics.draw(v.img, v.x, v.y, 0, v.scale, v.scale, v.ox, v.oy)
@@ -173,7 +173,7 @@ local function safeLoadNewImage(file)
 	end
 end
 
-function script.openProjectFile(self, absPath)
+function Editor.openProjectFile(self, absPath)
 	local data = fileman.decode_project_file(absPath)
 	if not data then  return  end
 
@@ -209,10 +209,10 @@ function script.openProjectFile(self, absPath)
 end
 
 -- Gets a Love File object with an absolute path filename.
-function script.fileDropped(self, file)
+function Editor.fileDropped(self, file)
 	local absPath = file:getFilename()
 	if fileman.get_file_extension(absPath) == fileman.fileExt then
-		script.openProjectFile(self, absPath)
+		Editor.openProjectFile(self, absPath)
 	else
 		local img = safeLoadNewImage(file)
 		if img then
@@ -224,7 +224,7 @@ end
 
 -- Gets the absolute path to a directory, which is allowed to be mounted with love.filesystem.
 --   From that you can get the local and absolute paths of files in the directory.
-function script.directoryDropped(self, absDirPath)
+function Editor.directoryDropped(self, absDirPath)
 	love.filesystem.mount(absDirPath, "newImages")
 	local files = love.filesystem.getDirectoryItems("newImages")
 	local x, y = self.mwx, self.mwy
@@ -288,7 +288,7 @@ local function updateHoverList(self, except)
 	end
 end
 
-function script.update(self, dt)
+function Editor.update(self, dt)
 	self.msx, self.msy = love.mouse.getPosition()
 	self.mwx, self.mwy = camera:screenToWorld(self.msx, self.msy)
 
@@ -339,7 +339,7 @@ function script.update(self, dt)
 	self.lastmwx, self.lastmwy = self.mwx, self.mwy
 end
 
-function script.input(self, name, change)
+function Editor.input(self, name, change)
 	shouldUpdate = true
 	if name == "click" then
 		if change == 1 and self.hoverImg then
@@ -415,7 +415,7 @@ function script.input(self, name, change)
 	end
 end
 
-local mt = { __index = script }
+local mt = { __index = Editor }
 
 function new(self)
 	return setmetatable({}, mt)
