@@ -417,9 +417,11 @@ function Editor.input(self, name, change)
 	elseif name == "paste" and change == 1 then
 		if input.isPressed("ctrl") then
 			local path = love.system.getClipboardText()
-			local image = getImageFromAbsolutePath(path)
-			if image then
-				addImage(self, image, path, self.mwx, self.mwy)
+			for p in path:gmatch("[^\r\n]+") do
+				local image = getImageFromAbsolutePath(p)
+				if image then
+					addImage(self, image, path, self.mwx, self.mwy)
+				end
 			end
 		end
 	elseif name == "confirm" and change == 1 then
