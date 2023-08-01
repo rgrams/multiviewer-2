@@ -43,7 +43,13 @@ function input.callback(name, change)
 	editor:input(name, change)
 end
 
+local droppedFiles
+
 function love.update(dt)
+	if droppedFiles then
+		editor:filesDropped(droppedFiles)
+		droppedFiles = nil
+	end
 	editor:update(dt)
 end
 
@@ -54,7 +60,8 @@ function love.draw()
 end
 
 function love.filedropped(file)
-	editor:fileDropped(file)
+	droppedFiles = droppedFiles or {}
+	table.insert(droppedFiles, file)
 end
 
 function love.directorydropped(absDirPath)

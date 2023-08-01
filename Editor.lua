@@ -212,16 +212,58 @@ function Editor.openProjectFile(self, absPath)
 	return data
 end
 
--- Receives a Love File object with an absolute path filename.
-function Editor.fileDropped(self, file)
+local function openFile(self, file, x, y)
 	local absPath = file:getFilename()
 	if fileman.get_file_extension(absPath) == fileman.fileExt then
 		Editor.openProjectFile(self, absPath)
 	else
 		local img = safeLoadNewImage(file)
 		if img then
-			local x, y = self.mwx, self.mwy
 			addImage(self, img, absPath, x, y)
+		end
+	end
+end
+
+function Editor.filesDropped(self, files)
+	local count = #files
+	if count == 1 then
+		openFile(self, files[1], self.mwx, self.mwy)
+		return
+	end
+
+	-- If multiple images are dropped, space them out in a grid around the cursor.
+	-- Load all images first to get the average width & height.
+	local totalW, totalH = 0, 0
+	local images = {}
+	local paths = {}
+	for i,file in ipairs(files) do
+		local absPath = file:getFilename()
+		if fileman.get_file_extension(absPath) == fileman.fileExt then
+			self:openProjectFile(absPath)
+		else
+			local img = safeLoadNewImage(file)
+			if img then
+				table.insert(images, img)
+				table.insert(paths, absPath)
+				local w, h = img:getDimensions()
+				totalW, totalH = totalW + w, totalH + h
+			end
+		end
+	end
+	count = #images
+	local rows = math.floor(math.sqrt(count))
+	local cols = math.ceil(count / rows)
+	local width, height = (cols + 1) * totalW/count, (rows + 1) * totalH/count
+	local tlx, tly = self.mwx - width/2, self.mwy - height/2
+	local xSpacing = width/(cols + 1)
+	local ySpacing = height/(rows + 1)
+	for row=1,rows do
+		for col=1,cols do
+			local i = (row-1)*cols + col
+			local image = images[i]
+			if not image then  break  end
+			local x, y = tlx + col * xSpacing, tly + row * ySpacing
+			addImage(self, image, paths[i], x, y)
 		end
 	end
 end
