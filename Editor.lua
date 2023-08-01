@@ -1,5 +1,6 @@
 
 local fileman = require "file_manager"
+local threadedLoader = require "lib.threaded-loader"
 
 local Editor = {}
 
@@ -84,6 +85,13 @@ function Editor.draw(self)
 
 			love.graphics.pop()
 		end
+	end
+	if self.isLoadingImages then
+		love.graphics.setColor(1, 1, 1)
+		love.graphics.push()
+		love.graphics.origin()
+		love.graphics.print("LOADING...", 10, 10)
+		love.graphics.pop()
 	end
 end
 
@@ -197,18 +205,14 @@ function Editor.openProjectFile(self, absPath)
 	local images = (data[1] and data or data.images) or {}
 	for i,img in ipairs(images) do
 		-- Save Format = { path, z, pos = { x, y }, size = { x, y } }
-		local image = getImageFromAbsolutePath(img.path)
-		if image then
-			local w, h = image:getDimensions()
-			local scale = img.size.x / w
-			addImage(self, image, img.path, img.pos.x, -img.pos.y, scale, true)
-		end
+		threadedLoader.load(img.path, img.path, img.pos, img.size)
+		self.isLoadingImages = true
 	end
 
 	return data
 end
 
--- Gets a Love File object with an absolute path filename.
+-- Receives a Love File object with an absolute path filename.
 function Editor.fileDropped(self, file)
 	local absPath = file:getFilename()
 	if fileman.get_file_extension(absPath) == fileman.fileExt then
@@ -222,7 +226,7 @@ function Editor.fileDropped(self, file)
 	end
 end
 
--- Gets the absolute path to a directory, which is allowed to be mounted with love.filesystem.
+-- Receives the absolute path to a directory, which is allowed to be mounted with love.filesystem.
 --   From that you can get the local and absolute paths of files in the directory.
 function Editor.directoryDropped(self, absDirPath)
 	love.filesystem.mount(absDirPath, "newImages")
@@ -275,6 +279,19 @@ local function saveProject(self)
 	end
 end
 
+local function onImageLoad(self, image, data)
+	local args = data.args
+	local path, pos, size = args[1], args[2], args[3]
+	local w = image:getWidth()
+	local scale = size.x / w
+	addImage(self, image, path, pos.x, -pos.y, scale, true)
+end
+
+local function onFinishLoading(self)
+	self.isLoadingImages = false
+	shouldUpdate = true
+end
+
 local function posOverlapsImage(img, x, y)
 	return x < img.rt and x > img.lt and y < img.bot and y > img.top
 end
@@ -289,6 +306,8 @@ local function updateHoverList(self, except)
 end
 
 function Editor.update(self, dt)
+	threadedLoader.update(self, onImageLoad, onFinishLoading)
+
 	self.msx, self.msy = love.mouse.getPosition()
 	self.mwx, self.mwy = camera:screenToWorld(self.msx, self.msy)
 
@@ -387,7 +406,7 @@ function Editor.input(self, name, change)
 			self.hoverImg = nil
 		end
 	elseif name == "save" and change == 1 then
-		if input.isPressed("ctrl") then
+		if input.isPressed("ctrl") and not self.isLoadingImages then
 			saveProject(self)
 			setDirty(self, false)
 		end

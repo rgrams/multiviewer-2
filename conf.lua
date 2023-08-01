@@ -25,7 +25,7 @@ function love.conf(t)
 	t.modules.physics = false
 	t.modules.sound = false
 	t.modules.system = true -- Need for copy-paste.
-	t.modules.thread = false
+	t.modules.thread = true
 	t.modules.timer = true
 	t.modules.touch = true
 	t.modules.video = false
