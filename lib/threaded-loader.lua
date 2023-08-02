@@ -16,7 +16,12 @@ local function fromAbsolutePath(path)
 	local fileData, error = love.filesystem.newFileData(file:read("*a"), "image")
 	file:close()
 	if not fileData then  return nil, error  end
-	return love.image.newImageData(fileData) -- Also nil or error.
+	local isSuccess, result = pcall(love.image.newImageData, fileData) -- Nil or error.
+	if isSuccess then
+		return result
+	else
+		return nil, result
+	end
 end
 
 local fromLocalPath = love.image.newImageData
