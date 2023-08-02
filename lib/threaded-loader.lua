@@ -36,8 +36,8 @@ while input do
 		if imageData then
 			outChannel:push({ imageData = imageData, path = path, args = args, isFinished = isFinished })
 		else
-			errChannel:push({ "load image", path = path, error = error, isFinished = isFinished })
-			print(error)
+			errChannel:push({ error = error, path = path, args = args, isFinished = isFinished })
+			print("Error in loader thread:", error, "\n   For path: "..tostring(path))
 		end
 	end
 	input = nextInput
@@ -50,6 +50,7 @@ local maxThreads = love.system.getProcessorCount() - 1
 local isRunning = false
 local inChannel = love.thread.getChannel("paths")
 local outChannel = love.thread.getChannel("images")
+local errChannel = love.thread.getChannel("errors")
 local runningThreads = {}
 local stoppedThreads = {}
 
@@ -91,6 +92,15 @@ function M.update(caller, onImageLoad, onFinishLoading)
 		end
 		data = outChannel:pop()
 	end
+end
+
+function M.processErrors(caller, onLoadError)
+	repeat
+		local data = errChannel:pop()
+		if data then
+			onLoadError(caller, data)
+		end
+	until not data
 end
 
 function M.getNext()

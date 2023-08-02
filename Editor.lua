@@ -26,6 +26,7 @@ function Editor.init(self)
 	self.images = {}
 	self.projectFilePath = nil
 	self.projectIsDirty = false
+	self.droppedGroups = {}
 end
 
 function Editor.draw(self)
@@ -231,26 +232,39 @@ function Editor.filesDropped(self, files)
 		return
 	end
 
-	-- If multiple images are dropped, space them out in a grid around the cursor.
-	-- Load all images first to get the average width & height.
-	local totalW, totalH = 0, 0
-	local images = {}
-	local paths = {}
+	local dropGroup = {
+		count = 0,
+		loadedCount = 0,
+		index = #self.droppedGroups + 1
+	}
+	table.insert(self.droppedGroups, dropGroup)
+	local groupIdx = dropGroup.index
 	for i,file in ipairs(files) do
 		local absPath = file:getFilename()
 		if fileman.get_file_extension(absPath) == fileman.fileExt then
 			self:openProjectFile(absPath)
 		else
-			local img = safeLoadNewImage(file)
-			if img then
-				table.insert(images, img)
-				table.insert(paths, absPath)
-				local w, h = img:getDimensions()
-				totalW, totalH = totalW + w, totalH + h
-			end
+			dropGroup.count = dropGroup.count + 1
+			threadedLoader.load(absPath, absPath, nil, nil, groupIdx, dropGroup.count)
 		end
 	end
-	count = #images
+end
+
+local function sumImageSizes(imageGroup)
+	local totalW, totalH = 0, 0
+	for i=1,imageGroup.count do
+		local data = imageGroup[i]
+		if data then
+			local w, h = data.image:getDimensions()
+			totalW, totalH = totalW + w, totalH + h
+		end
+	end
+	return totalW, totalH
+end
+
+local function addImagesInGrid(self, imageGroup)
+	local count = imageGroup.count
+	local totalW, totalH = sumImageSizes(imageGroup)
 	local rows = math.floor(math.sqrt(count))
 	local cols = math.ceil(count / rows)
 	local width, height = (cols + 1) * totalW/count, (rows + 1) * totalH/count
@@ -260,10 +274,13 @@ function Editor.filesDropped(self, files)
 	for row=1,rows do
 		for col=1,cols do
 			local i = (row-1)*cols + col
-			local image = images[i]
-			if not image then  break  end
-			local x, y = tlx + col * xSpacing, tly + row * ySpacing
-			addImage(self, image, paths[i], x, y)
+			local data = imageGroup[i]
+			if data then
+				local image = data.image
+				if not image then  break  end
+				local x, y = tlx + col * xSpacing, tly + row * ySpacing
+				addImage(self, image, data.path, x, y)
+			end
 		end
 	end
 end
@@ -323,10 +340,41 @@ end
 
 local function onImageLoad(self, image, data)
 	local args = data.args
-	local path, pos, size = args[1], args[2], args[3]
+	local path, pos, size, groupIdx, idx = args[1], args[2], args[3], args[4], args[5]
+	if groupIdx then
+		local imageGroup = self.droppedGroups[groupIdx]
+		if not imageGroup then
+			pos = { x=self.mwx, y=self.mwx }
+			local w, h = image:getDimensions()
+			size = { x=w, y=h }
+		else
+			imageGroup[idx] = { path = path, image = image }
+			imageGroup.loadedCount = imageGroup.loadedCount + 1
+			if imageGroup.loadedCount == imageGroup.count then
+				addImagesInGrid(self, imageGroup)
+			end
+			return
+		end
+	end
 	local w = image:getWidth()
 	local scale = size.x / w
 	addImage(self, image, path, pos.x, -pos.y, scale, true)
+end
+
+local function onLoadError(self, data)
+	local args = data.args
+	local groupIdx = args[4]
+	if groupIdx then
+		local imageGroup = self.droppedGroups[groupIdx]
+		if not imageGroup then
+			print("Image load error for drop group "..tostring(groupIdx)..", but that group doesn't exist.")
+		else
+			imageGroup.loadedCount = imageGroup.loadedCount + 1
+			if imageGroup.loadedCount == imageGroup.count then
+				addImagesInGrid(self, imageGroup)
+			end
+		end
+	end
 end
 
 local function onFinishLoading(self)
@@ -349,6 +397,7 @@ end
 
 function Editor.update(self, dt)
 	threadedLoader.update(self, onImageLoad, onFinishLoading)
+	threadedLoader.processErrors(self, onLoadError)
 
 	self.msx, self.msy = love.mouse.getPosition()
 	self.mwx, self.mwy = camera:screenToWorld(self.msx, self.msy)
