@@ -27,16 +27,19 @@ end
 local fromLocalPath = love.image.newImageData
 
 local input = inChannel:pop()
+if not input then
+	outChannel:push({ finishedThread = self })
+end
 while input do
 	local nextInput = inChannel:pop()
 	if input then
 		local path, args = input.path, input.args
 		local imageData, error = fromAbsolutePath(path) -- Can change this to the absolute version if needed.
-		local isFinished = not nextInput and self
+		local finishedThread = not nextInput and self
 		if imageData then
-			outChannel:push({ imageData = imageData, path = path, args = args, isFinished = isFinished })
+			outChannel:push({ imageData = imageData, path = path, args = args, finishedThread = finishedThread })
 		else
-			errChannel:push({ error = error, path = path, args = args, isFinished = isFinished })
+			errChannel:push({ error = error, path = path, args = args, finishedThread = finishedThread })
 			print("Error in loader thread:", error, "\n   For path: "..tostring(path))
 		end
 	end
@@ -77,28 +80,37 @@ local function threadFinished(finishedThread)
 	end
 end
 
+local function finalizeThread(thread, caller, onFinishLoading)
+	threadFinished(thread)
+	if #runningThreads == 0 then
+		onFinishLoading(caller)
+		isRunning = false
+	end
+end
+
 function M.update(caller, onImageLoad, onFinishLoading)
 	if not isRunning then  return false  end
 	local data = outChannel:pop()
 	while data do
-		local image = love.graphics.newImage(data.imageData)
-		onImageLoad(caller, image, data)
-		if data.isFinished then
-			threadFinished(data.isFinished)
-			if #runningThreads == 0 then
-				onFinishLoading(caller)
-				isRunning = false
-			end
+		if data.path then -- No path if -just- a "thread finished" entry (for threads that end without doing anything).
+			local image = love.graphics.newImage(data.imageData)
+			onImageLoad(caller, image, data)
+		end
+		if data.finishedThread then
+			finalizeThread(data.finishedThread, caller, onFinishLoading)
 		end
 		data = outChannel:pop()
 	end
 end
 
-function M.processErrors(caller, onLoadError)
+function M.processErrors(caller, onLoadError, onFinishLoading)
 	repeat
 		local data = errChannel:pop()
 		if data then
 			onLoadError(caller, data)
+			if data.finishedThread then
+				finalizeThread(data.finishedThread, caller, onFinishLoading)
+			end
 		end
 	until not data
 end
