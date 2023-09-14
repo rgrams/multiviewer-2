@@ -396,8 +396,7 @@ local function updateHoverList(self, except)
 end
 
 function Editor.update(self, dt)
-	threadedLoader.update(self, onImageLoad, onFinishLoading)
-	threadedLoader.processErrors(self, onLoadError)
+	threadedLoader.update(self, onImageLoad, onLoadError, onFinishLoading)
 
 	self.msx, self.msy = love.mouse.getPosition()
 	self.mwx, self.mwy = camera:screenToWorld(self.msx, self.msy)

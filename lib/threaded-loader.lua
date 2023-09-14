@@ -8,7 +8,6 @@ local self = _args[1]
 
 local inChannel = love.thread.getChannel("paths")
 local outChannel = love.thread.getChannel("images")
-local errChannel = love.thread.getChannel("errors")
 
 local function fromAbsolutePath(path)
 	local file, error = io.open(path, "rb")
@@ -39,7 +38,7 @@ while input do
 		if imageData then
 			outChannel:push({ imageData = imageData, path = path, args = args, finishedThread = finishedThread })
 		else
-			errChannel:push({ error = error, path = path, args = args, finishedThread = finishedThread })
+			outChannel:push({ error = error, path = path, args = args, finishedThread = finishedThread })
 			print("Error in loader thread:", error, "\n   For path: "..tostring(path))
 		end
 	end
@@ -53,7 +52,6 @@ local maxThreads = love.system.getProcessorCount() - 1
 local isRunning = false
 local inChannel = love.thread.getChannel("paths")
 local outChannel = love.thread.getChannel("images")
-local errChannel = love.thread.getChannel("errors")
 local runningThreads = {}
 local stoppedThreads = {}
 
@@ -88,11 +86,13 @@ local function finalizeThread(thread, caller, onFinishLoading)
 	end
 end
 
-function M.update(caller, onImageLoad, onFinishLoading)
+function M.update(caller, onImageLoad, onLoadError, onFinishLoading)
 	if not isRunning then  return false  end
 	local data = outChannel:pop()
 	while data do
-		if data.path then -- No path if -just- a "thread finished" entry (for threads that end without doing anything).
+		if data.error then
+			onLoadError(caller, data)
+		elseif data.path then -- No path if -just- a "thread finished" entry (for threads that end without doing anything).
 			local image = love.graphics.newImage(data.imageData)
 			onImageLoad(caller, image, data)
 		end
@@ -101,18 +101,6 @@ function M.update(caller, onImageLoad, onFinishLoading)
 		end
 		data = outChannel:pop()
 	end
-end
-
-function M.processErrors(caller, onLoadError, onFinishLoading)
-	repeat
-		local data = errChannel:pop()
-		if data then
-			onLoadError(caller, data)
-			if data.finishedThread then
-				finalizeThread(data.finishedThread, caller, onFinishLoading)
-			end
-		end
-	until not data
 end
 
 function M.getNext()
