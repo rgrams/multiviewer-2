@@ -32,7 +32,9 @@ end
 function Editor.draw(self)
 	love.graphics.setColor(1, 1, 1, 1)
 	for i,v in ipairs(self.images) do
-		love.graphics.draw(v.img, v.x, v.y, 0, v.scale, v.scale, v.ox, v.oy)
+		if v.img then
+			love.graphics.draw(v.img, v.x, v.y, 0, v.scale, v.scale, v.ox, v.oy)
+		end
 	end
 	if self.hoverImg then
 		local img = self.hoverImg
@@ -96,25 +98,6 @@ function Editor.draw(self)
 	end
 end
 
-local function changeDepth(self, image, dir)
-	local from
-	for i,img in ipairs(self.images) do
-		if img == image then
-			from = i
-			break
-		end
-	end
-	if not from then  return  end
-	local to = clamp(from + 1 * dir, 1, #self.images)
-	if input.isPressed("ctrl") then
-		to = dir == 1 and #self.images or 1
-	end
-	if to ~= from then
-		table.remove(self.images, from)
-		table.insert(self.images, to, image)
-	end
-end
-
 local function setWindowTitle(self)
 	local filename = self.projectFileName or defaultWindowTitleName
 	local title = BASE_WINDOW_TITLE .. filename
@@ -132,54 +115,37 @@ local function setDirty(self, dirty)
 	end
 end
 
+local function changeDepth(self, image, dir)
+	local from
+	for i,img in ipairs(self.images) do
+		if img == image then
+			from = i
+			break
+		end
+	end
+	if not from then  return  end
+	local to = clamp(from + 1 * dir, 1, #self.images)
+	if input.isPressed("ctrl") then
+		to = dir == 1 and #self.images or 1
+	end
+	if to ~= from then
+		table.remove(self.images, from)
+		table.insert(self.images, to, image)
+		setDirty(self, true)
+	end
+end
+
 local function updateImageRect(img)
 	local w, h = img.w * img.scale, img.h * img.scale
 	img.lt, img.rt = img.x - w/2, img.x + w/2
 	img.top, img.bot = img.y - h/2, img.y + h/2
 end
 
-local function addImage(self, imgData, name, x, y, scale, dontDirty)
-	if not dontDirty then  setDirty(self, true)  end
-	x = x or 0;  y = y or 0;  scale = scale or 1
-	local i = {
-		img = imgData, name = name,
-		x = x, y = y, scale = scale
-	}
-	local w, h = imgData:getDimensions()
-	i.w, i.h = w, h
-	i.ox, i.oy = w/2, h/2
-	w, h = w * scale, h * scale
-	i.lt, i.rt, i.top, i.bot = x - w/2, x + w/2, y - h/2, y + h/2
-	table.insert(self.images, i)
-	shouldUpdate = true
-end
-
-local function getImageFromAbsolutePath(path)
-	local file, error = io.open(path, "rb")
-	if error then
-		print(error)
-		return
-	end
-	local filename = fileman.get_filename_from_path(path) or "new.jpg"
-	local fileData, error = love.filesystem.newFileData(file:read("*a"), filename)
-	file:close()
-	if not error then
-		local isSuccess, result = pcall(love.graphics.newImage, fileData)
-		if not isSuccess then
-			print("Error generating image from file:\n   "..result)
-		else
-			return result
-		end
-	else
-		print("Error reading file:\n   "..error)
-	end
-end
-
-local function safeLoadNewImage(file)
-	local success, img = pcall(love.graphics.newImage, file)
-	if success then
-		return img
-	end
+local function loadImage(self, path, x, y, w, h, groupIdx, idxInGroup)
+	local index = #self.images + 1
+	self.images[index] = { path = path }
+	self.isLoadingImages = true
+	threadedLoader.load(path, path, index, x, y, w, h, groupIdx, idxInGroup)
 end
 
 function Editor.openProjectFile(self, absPath)
@@ -206,8 +172,8 @@ function Editor.openProjectFile(self, absPath)
 	local images = (data[1] and data or data.images) or {}
 	for i,img in ipairs(images) do
 		-- Save Format = { path, z, pos = { x, y }, size = { x, y } }
-		threadedLoader.load(img.path, img.path, img.pos, img.size)
-		self.isLoadingImages = true
+		local x, y, w, h = img.pos.x, img.pos.y, img.size.x, img.size.y
+		loadImage(self, img.path, x, y, w, h)
 	end
 
 	return data
@@ -218,10 +184,8 @@ local function openFile(self, file, x, y)
 	if fileman.get_file_extension(absPath) == fileman.fileExt then
 		Editor.openProjectFile(self, absPath)
 	else
-		local img = safeLoadNewImage(file)
-		if img then
-			addImage(self, img, absPath, x, y)
-		end
+		loadImage(self, absPath, x, y)
+		setDirty(self, true)
 	end
 end
 
@@ -245,9 +209,23 @@ function Editor.filesDropped(self, files)
 			self:openProjectFile(absPath)
 		else
 			dropGroup.count = dropGroup.count + 1
-			threadedLoader.load(absPath, absPath, nil, nil, groupIdx, dropGroup.count)
+			local x, y, w, h = nil, nil, nil, nil
+			local idxInGroup = dropGroup.count
+			loadImage(self, absPath, x, y, w, h, groupIdx, idxInGroup)
+			setDirty(self, true)
 		end
 	end
+end
+
+local function setImage(self, index, image, x, y, w, h)
+	local img = self.images[index]
+	img.img = image
+	img.x, img.y = x, -y
+	img.w, img.h = image:getDimensions()
+	img.ox, img.oy = img.w/2, img.h/2
+	img.scale = w / img.w
+	updateImageRect(img)
+	shouldUpdate = true
 end
 
 local function sumImageSizes(imageGroup)
@@ -262,7 +240,7 @@ local function sumImageSizes(imageGroup)
 	return totalW, totalH
 end
 
-local function addImagesInGrid(self, imageGroup)
+local function setImagesInGrid(self, imageGroup)
 	local count = imageGroup.count
 	local totalW, totalH = sumImageSizes(imageGroup)
 	local rows = math.floor(math.sqrt(count))
@@ -276,10 +254,9 @@ local function addImagesInGrid(self, imageGroup)
 			local i = (row-1)*cols + col
 			local data = imageGroup[i]
 			if data then
-				local image = data.image
-				if not image then  break  end
+				if not data.image then  break  end
 				local x, y = tlx + col * xSpacing, tly + row * ySpacing
-				addImage(self, image, data.path, x, y)
+				setImage(self, data.index, data.image, x, y, data.image:getDimensions())
 			end
 		end
 	end
@@ -287,18 +264,20 @@ end
 
 -- Receives the absolute path to a directory, which is allowed to be mounted with love.filesystem.
 --   From that you can get the local and absolute paths of files in the directory.
+--	  Need to mount the directory to iterate over its files.
 function Editor.directoryDropped(self, absDirPath)
 	love.filesystem.mount(absDirPath, "newImages")
 	local files = love.filesystem.getDirectoryItems("newImages")
 	local x, y = self.mwx, self.mwy
-	for k,path in pairs(files) do
+	for _,path in pairs(files) do
 		local mountedPath = "newImages/" .. path
 		local info = love.filesystem.getInfo(mountedPath)
 		if not info then
 			print("ERROR: Can't get file info for path: \n  " .. mountedPath)
 		elseif info.type == "file" then
-			local img = safeLoadNewImage(mountedPath)
-			if img then  addImage(self, img, absDirPath .. "/" .. path, x, y)  end
+			local absPath = absDirPath .. "/" .. path
+			loadImage(self, absPath, x, y)
+			setDirty(self, true)
 		end
 	end
 end
@@ -318,7 +297,7 @@ local function makeProjectData(self)
 		local iw, ih = img.img:getDimensions()
 		local w, h = iw * img.scale, ih * img.scale
 		id[i] = {
-			path = img.name, z = i,
+			path = img.path, z = i,
 			pos = { x = img.x, y = -img.y }, size = { x = w, y = h }
 		}
 	end
@@ -340,25 +319,27 @@ end
 
 local function onImageLoad(self, image, data)
 	local args = data.args
-	local path, pos, size, groupIdx, idx = args[1], args[2], args[3], args[4], args[5]
+	local path, index = args[1], args[2]
+	local x, y = args[3] or self.mwx, args[4] or self.mwy
+	local w, h = args[5], args[6]
+	if not w or not h then
+		w, h = image:getDimensions()
+	end
+	local groupIdx, idxInGroup = args[7], args[8]
 	if groupIdx then
 		local imageGroup = self.droppedGroups[groupIdx]
 		if not imageGroup then
-			pos = { x=self.mwx, y=self.mwx }
-			local w, h = image:getDimensions()
-			size = { x=w, y=h }
+			print("Image load error for drop group "..tostring(groupIdx)..", but that group doesn't exist.")
 		else
-			imageGroup[idx] = { path = path, image = image }
+			imageGroup[idxInGroup] = { path = path, image = image, index = index }
 			imageGroup.loadedCount = imageGroup.loadedCount + 1
 			if imageGroup.loadedCount == imageGroup.count then
-				addImagesInGrid(self, imageGroup)
+				setImagesInGrid(self, imageGroup)
 			end
 			return
 		end
 	end
-	local w = image:getWidth()
-	local scale = size.x / w
-	addImage(self, image, path, pos.x, -pos.y, scale, true)
+	setImage(self, index, image, x, y, w, h)
 end
 
 local function onLoadError(self, data)
@@ -366,12 +347,10 @@ local function onLoadError(self, data)
 	local groupIdx = args[4]
 	if groupIdx then
 		local imageGroup = self.droppedGroups[groupIdx]
-		if not imageGroup then
-			print("Image load error for drop group "..tostring(groupIdx)..", but that group doesn't exist.")
-		else
+		if imageGroup then
 			imageGroup.loadedCount = imageGroup.loadedCount + 1
 			if imageGroup.loadedCount == imageGroup.count then
-				addImagesInGrid(self, imageGroup)
+				setImagesInGrid(self, imageGroup)
 			end
 		end
 	end
@@ -383,6 +362,7 @@ local function onFinishLoading(self)
 end
 
 local function posOverlapsImage(img, x, y)
+	if not img.img then  return false  end
 	return x < img.rt and x > img.lt and y < img.bot and y > img.top
 end
 
@@ -502,16 +482,14 @@ function Editor.input(self, name, change)
 		end
 	elseif name == "copy" and change == 1 then
 		if input.isPressed("ctrl") and self.hoverImg then
-			love.system.setClipboardText(self.hoverImg.name)
+			love.system.setClipboardText(self.hoverImg.path)
 		end
 	elseif name == "paste" and change == 1 then
 		if input.isPressed("ctrl") then
-			local path = love.system.getClipboardText()
-			for p in path:gmatch("[^\r\n]+") do
-				local image = getImageFromAbsolutePath(p)
-				if image then
-					addImage(self, image, path, self.mwx, self.mwy)
-				end
+			local text = love.system.getClipboardText()
+			for path in text:gmatch("[^\r\n]+") do
+				loadImage(self, path)
+				setDirty(self, true)
 			end
 		end
 	elseif name == "confirm" and change == 1 then
